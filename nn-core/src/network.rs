@@ -1,7 +1,7 @@
 use crate::layer::Layer;
 
 pub struct NeuralNetwork<'a> {
-    pub layers: Vec<&'a dyn Layer>
+    pub layers: Vec<&'a dyn Layer>,
 }
 
 impl<'a> NeuralNetwork<'a> {

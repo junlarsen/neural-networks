@@ -47,6 +47,14 @@ impl Neuron {
         self.output
     }
 
+    /// Update the weights and bias of the neuron according to the given learning rate.
+    pub fn update_weights(&mut self, learning_rate: f32) {
+        self.weights.multiply(learning_rate);
+        self.weights.multiply(self.delta);
+
+        self.bias *= learning_rate * self.delta;
+    }
+
     /// Manually update the bias value of the neuron.
     pub fn set_bias(&mut self, bias: f32) {
         self.bias = bias;
