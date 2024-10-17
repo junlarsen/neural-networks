@@ -7,29 +7,29 @@
 //! and a method to update the weights based on the delta value.
 
 use crate::activation::ActivationFunction;
-use crate::linalg::{Matrix2D, Vector};
+use crate::linalg::Vector;
 
 /// A single neuron in a neural network.
 ///
 /// The neuron holds its input edges in the network in the form of inputs, it maintains a separate
 /// weight for each input edge, a shared bias, and an activation function.
-pub struct Neuron {
+pub struct Neuron<F: ActivationFunction> {
     pub input: Vector,
     pub weights: Vector,
     pub bias: f32,
-    pub activation: ActivationFunction,
+    pub activation: F,
     pub output: f32,
     pub delta: f32,
 }
 
-impl Neuron {
+impl<F: ActivationFunction> Neuron<F> {
     /// Create a new neuron with the given input size and activation function.
     ///
     /// By default, the bias is set to zero, and a uniform distribution across [-0.5, 0.5] is used
     /// for the weights.
     ///
     /// These standard options can be changed by calling the `set_bias`, `set_weights` methods.
-    pub fn new(input_size: usize, activation: ActivationFunction) -> Self {
+    pub fn new(input_size: usize, activation: F) -> Self {
         Self {
             input: Vector::new(vec![0.0; input_size]),
             weights: Vector::from_uniform_distribution(input_size + 1, -0.5, 0.5),
@@ -43,7 +43,7 @@ impl Neuron {
     /// Make a forward pass through the neuron.
     pub fn forward(&mut self, input: Vector) -> f32 {
         let linear = input.inner_product(&self.weights);
-        self.output = self.activation(linear);
+        self.output = self.activation.call(linear);
         self.output
     }
 
