@@ -13,27 +13,27 @@ use crate::linalg::Vector;
 ///
 /// The neuron holds its input edges in the network in the form of inputs, it maintains a separate
 /// weight for each input edge, a shared bias, and an activation function.
-pub struct Neuron<F: ActivationFunction> {
+pub struct Neuron {
     pub input: Vector,
     pub weights: Vector,
     pub bias: f32,
-    pub activation: F,
+    pub activation: Box<dyn ActivationFunction>,
     pub output: f32,
     pub delta: f32,
 }
 
-impl<F: ActivationFunction> Neuron<F> {
+impl Neuron {
     /// Create a new neuron with the given input size and activation function.
     ///
     /// By default, the bias is set to zero, and a uniform distribution across [-0.5, 0.5] is used
     /// for the weights.
     ///
     /// These standard options can be changed by calling the `set_bias`, `set_weights` methods.
-    pub fn new(input_size: usize, activation: F) -> Self {
+    pub fn new(input_size: usize, activation: impl ActivationFunction + 'static) -> Self {
         Self {
             input: Vector::new(vec![0.0; input_size]),
             weights: Vector::from_uniform_distribution(input_size + 1, -0.5, 0.5),
-            activation,
+            activation: Box::new(activation),
             bias: 0.0,
             output: 0.0,
             delta: 0.0,
