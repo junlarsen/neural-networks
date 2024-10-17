@@ -4,24 +4,22 @@
 //! addition, dot product, etc. It also has vector and matrix data types that can be used to
 //! represent and manipulate data in neural networks.
 
-/// A vector f32 vector with a fixed size.
-pub struct Vector<const N: usize> {
-    data: [f32; N],
+/// A vector of f32 elements
+pub struct Vector {
+    v: Vec<f32>,
 }
 
-pub type Vector2 = Vector<2>;
-pub type Vector3 = Vector<3>;
-
-impl<const N: usize> Vector<N> {
-    pub fn new(data: [f32; N]) -> Self {
-        Self { data }
+impl Vector {
+    /// Create a new vector from an inner `Vec<f32>`.
+    pub fn new<T: Into<Vec<f32>>>(data: T) -> Self {
+        Self { v: data.into() }
     }
 
     /// Add another vector to the current vector.
     ///
     /// This implementation requires that the vectors have the same size.
     pub fn add(mut self, other: &Self) -> Self {
-        let tuples = self.data.iter_mut().zip(other.data.iter());
+        let tuples = self.v.iter_mut().zip(other.v.iter());
         for (lhs, rhs) in tuples {
             *lhs += rhs;
         }
@@ -30,7 +28,7 @@ impl<const N: usize> Vector<N> {
 
     /// Multiply the current vector by a scalar value.
     pub fn multiply_scalar(mut self, scalar: f32) -> Self {
-        for elem in self.data.iter_mut() {
+        for elem in self.v.iter_mut() {
             *elem *= scalar;
         }
         self
@@ -39,20 +37,20 @@ impl<const N: usize> Vector<N> {
 
 #[cfg(test)]
 mod tests {
-    use crate::linalg::Vector2;
+    use crate::linalg::Vector;
 
     #[test]
     fn test_vector_addition() {
-        let v = Vector2::new([1.0, 2.0]);
-        let w = Vector2::new([3.0, 4.0]);
+        let v = Vector::new([1.0, 2.0]);
+        let w = Vector::new([3.0, 4.0]);
         let x = v.add(&w);
-        assert_eq!(x.data, [4.0, 6.0]);
+        assert_eq!(x.v, [4.0, 6.0]);
     }
 
     #[test]
     fn test_vector_scalar_multiplication() {
-        let v = Vector2::new([1.0, 2.0]);
+        let v = Vector::new([1.0, 2.0]);
         let x = v.multiply_scalar(2.0);
-        assert_eq!(x.data, [2.0, 4.0]);
+        assert_eq!(x.v, [2.0, 4.0]);
     }
 }
