@@ -3,6 +3,8 @@
 //! This module exports several activation functions that can be used to activate neurons in a
 //! neural network.
 
+pub type ActivationFunction = fn(f32) -> f32;
+
 /// Sigmoid activation function.
 ///
 /// This function is often referred to as the logistic function. The function's domain is the entire
