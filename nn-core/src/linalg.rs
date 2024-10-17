@@ -27,6 +27,15 @@ impl Vector {
         }
     }
 
+    /// Compute the inner product of two vectors.
+    pub fn inner_product(&self, other: &Self) -> f32 {
+        let mut sum = 0.0;
+        for (a, b) in self.v.iter().zip(other.v.iter()) {
+            sum += a * b;
+        }
+        sum
+    }
+
     /// Add another vector to the current vector.
     ///
     /// This implementation requires that the vectors have the same size.
@@ -96,7 +105,7 @@ impl Matrix2D {
     ///
     /// In other words, the dot product of two matrices A and B is a matrix C where C[i][j] is
     /// the dot product of A[i][k] and B[k][j] for all i, j, and k.
-    pub fn multiply(&self, other: &Self) -> Self {
+    pub fn dot(&self, other: &Self) -> Self {
         assert_eq!(
             self.cols, other.rows,
             "cannot perform dot product on matrices with different dimensions"
@@ -187,7 +196,7 @@ mod tests {
     fn test_matrix_multiply() {
         let a = Matrix2D::from_vector(Vector::new([1.0, 2.0]));
         let b = Matrix2D::from_vector(Vector::new([3.0, 4.0])).transpose();
-        let c = a.multiply(&b);
+        let c = a.dot(&b);
         assert_eq!(c.get(0, 0), 3.0);
         assert_eq!(c.get(0, 1), 4.0);
         assert_eq!(c.get(1, 0), 6.0);

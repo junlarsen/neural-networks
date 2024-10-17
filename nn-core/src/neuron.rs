@@ -7,7 +7,7 @@
 //! and a method to update the weights based on the delta value.
 
 use crate::activation::ActivationFunction;
-use crate::linalg::Vector;
+use crate::linalg::{Matrix2D, Vector};
 
 /// A single neuron in a neural network.
 ///
@@ -41,7 +41,11 @@ impl Neuron {
     }
 
     /// Make a forward pass through the neuron.
-    pub fn forward(&mut self, input: Vector) {}
+    pub fn forward(&mut self, input: Vector) -> f32 {
+        let linear = input.inner_product(&self.weights);
+        self.output = self.activation(linear);
+        self.output
+    }
 
     /// Manually update the bias value of the neuron.
     pub fn set_bias(&mut self, bias: f32) {
