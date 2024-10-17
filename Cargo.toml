@@ -1,0 +1,3 @@
+[workspace]
+members = ["nn-core", "nn-playground"]
+resolver = "2"
