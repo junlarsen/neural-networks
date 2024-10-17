@@ -41,6 +41,9 @@ dependencies = [
 [[package]]
 name = "nn-playground"
 version = "0.1.0"
+dependencies = [
+ "nn-core",
+]
 
 [[package]]
 name = "ppv-lite86"

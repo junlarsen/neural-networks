@@ -65,6 +65,16 @@ impl Vector {
         self.clone().multiply_scalar_in_place(scalar)
     }
 
+    /// Get the value at the given index in the vector.
+    pub fn get(&self, index: usize) -> f32 {
+        self.v[index]
+    }
+
+    /// Set the value at the given index in the vector.
+    pub fn set(&mut self, index: usize, value: f32) {
+        self.v[index] = value;
+    }
+
     /// Get the size of the vector.
     pub fn size(&self) -> usize {
         self.v.len()

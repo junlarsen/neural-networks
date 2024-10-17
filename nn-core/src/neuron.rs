@@ -17,7 +17,7 @@ pub struct Neuron {
     pub input: Vector,
     pub weights: Vector,
     pub bias: f32,
-    pub activation: Box<dyn ActivationFunction>,
+    pub activation: &'static dyn ActivationFunction,
     pub output: f32,
     pub delta: f32,
 }
@@ -29,19 +29,19 @@ impl Neuron {
     /// for the weights.
     ///
     /// These standard options can be changed by calling the `set_bias`, `set_weights` methods.
-    pub fn new(input_size: usize, activation: impl ActivationFunction + 'static) -> Self {
+    pub fn new(input_size: usize, activation: &'static impl ActivationFunction) -> Self {
         Self {
             input: Vector::new(vec![0.0; input_size]),
             weights: Vector::from_uniform_distribution(input_size + 1, -0.5, 0.5),
-            activation: Box::new(activation),
-            bias: 0.0,
+            activation,
+            bias: rand::random::<f32>() % 1.0,
             output: 0.0,
             delta: 0.0,
         }
     }
 
     /// Make a forward pass through the neuron.
-    pub fn forward(&mut self, input: Vector) -> f32 {
+    pub fn forward(&mut self, input: &Vector) -> f32 {
         let linear = input.inner_product(&self.weights);
         self.output = self.activation.call(linear);
         self.output
