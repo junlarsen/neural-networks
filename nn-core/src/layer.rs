@@ -1,8 +1,8 @@
 //! Neural Network layers
 
 use crate::activation::ActivationFunction;
-use crate::linalg::Vector;
 use crate::neuron::Neuron;
+use crate::tensor::Tensor;
 use std::fmt::Debug;
 
 pub trait Layer: Debug {}
@@ -27,12 +27,12 @@ impl DenseLayer {
     }
 
     /// Pass the input through each of the neurons in the network
-    pub fn forward(&mut self, input: Vector) -> Vector {
+    pub fn forward(&mut self, input: Tensor) -> Tensor {
         let outputs = self
             .neurons
             .iter_mut()
             .map(|n| n.forward(&input))
             .collect::<Vec<_>>();
-        Vector::new(outputs)
+        Tensor::vector(outputs)
     }
 }
