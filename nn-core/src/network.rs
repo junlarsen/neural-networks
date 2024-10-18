@@ -1,11 +1,12 @@
 use crate::layer::Layer;
 
-pub struct NeuralNetwork<'a> {
-    pub layers: Vec<&'a dyn Layer>,
+#[derive(Debug)]
+pub struct NeuralNetwork {
+    pub layers: Vec<Box<dyn Layer>>,
 }
 
-impl<'a> NeuralNetwork<'a> {
-    pub fn new(layers: Vec<&'a dyn Layer>) -> Self {
+impl NeuralNetwork {
+    pub fn new(layers: Vec<Box<dyn Layer>>) -> Self {
         Self { layers }
     }
 }

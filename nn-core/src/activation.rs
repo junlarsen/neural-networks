@@ -3,12 +3,15 @@
 //! This module exports several activation functions that can be used to activate neurons in a
 //! neural network.
 
-pub trait ActivationFunction {
+use std::fmt::Debug;
+
+pub trait ActivationFunction: Debug {
     fn call(&self, x: f32) -> f32;
     fn derivative(&self, x: f32) -> f32;
 }
 
 /// Sigmoid activation function
+#[derive(Debug)]
 pub struct Sigmoid;
 
 impl ActivationFunction for Sigmoid {
@@ -21,6 +24,7 @@ impl ActivationFunction for Sigmoid {
 }
 
 /// Linear activation function
+#[derive(Debug)]
 pub struct Linear;
 
 impl ActivationFunction for Linear {

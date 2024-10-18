@@ -13,6 +13,7 @@ use crate::linalg::Vector;
 ///
 /// The neuron holds its input edges in the network in the form of inputs, it maintains a separate
 /// weight for each input edge, a shared bias, and an activation function.
+#[derive(Debug)]
 pub struct Neuron {
     pub input: Vector,
     pub weights: Vector,

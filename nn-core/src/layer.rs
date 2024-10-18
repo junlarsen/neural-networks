@@ -3,9 +3,11 @@
 use crate::activation::ActivationFunction;
 use crate::linalg::Vector;
 use crate::neuron::Neuron;
+use std::fmt::Debug;
 
-pub trait Layer {}
+pub trait Layer: Debug {}
 
+#[derive(Debug)]
 pub struct DenseLayer {
     neurons: Vec<Neuron>,
 }
@@ -18,19 +20,19 @@ impl DenseLayer {
         neuron_count: usize,
         activation: &'static impl ActivationFunction,
     ) -> Self {
-        let mut neurons = Vec::with_capacity(neuron_count);
-        for _ in 0..neuron_count {
-            neurons.push(Neuron::new(input_size, activation));
-        }
+        let neurons = (0..neuron_count)
+            .map(|_| Neuron::new(input_size, activation))
+            .collect();
         Self { neurons }
     }
 
     /// Pass the input through each of the neurons in the network
     pub fn forward(&mut self, input: Vector) -> Vector {
-        let mut output = Vector::new(vec![0.0; self.neurons.len()]);
-        for (i, neuron) in self.neurons.iter_mut().enumerate() {
-            output.set(i, neuron.forward(&input));
-        }
-        output
+        let outputs = self
+            .neurons
+            .iter_mut()
+            .map(|n| n.forward(&input))
+            .collect::<Vec<_>>();
+        Vector::new(outputs)
     }
 }
