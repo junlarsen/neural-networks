@@ -60,15 +60,42 @@ impl Tensor1D {
     }
 
     /// Add another vector to the vector.
-    ///
-    /// This operation updates each element in the current vector by adding the corresponding
-    /// element in the other vector.
-    pub fn add(&mut self, rhs: &Self) {
+    pub fn pairwise_summation(&mut self, rhs: &Self) {
         self.data
             .iter_mut()
             .zip(rhs.data.iter())
             .for_each(|(lhs, rhs)| {
                 *lhs += rhs;
+            });
+    }
+
+    /// Subtract another vector from the vector.
+    pub fn pairwise_subtraction(&mut self, rhs: &Self) {
+        self.data
+            .iter_mut()
+            .zip(rhs.data.iter())
+            .for_each(|(lhs, rhs)| {
+                *lhs -= rhs;
+            });
+    }
+
+    /// Multiply each element in the vector by the corresponding element in the other vector.
+    pub fn pairwise_multiplication(&mut self, rhs: &Self) {
+        self.data
+            .iter_mut()
+            .zip(rhs.data.iter())
+            .for_each(|(lhs, rhs)| {
+                *lhs *= rhs;
+            });
+    }
+
+    /// Divide each element in the vector by the corresponding element in the other vector.
+    pub fn pairwise_division(&mut self, rhs: &Self) {
+        self.data
+            .iter_mut()
+            .zip(rhs.data.iter())
+            .for_each(|(lhs, rhs)| {
+                *lhs /= rhs;
             });
     }
 
@@ -203,12 +230,39 @@ mod tests {
     use crate::tensor::{Tensor1D, Tensor2D};
 
     #[test]
-    fn test_tensor1d_addition() {
+    fn test_tensor1d_summation() {
         let mut v = Tensor1D::raw([1.0, 2.0], [2]);
         let w = Tensor1D::raw([3.0, 4.0], [2]);
 
-        v.add(&w);
+        v.pairwise_summation(&w);
         assert_eq!(v.data, [4.0, 6.0]);
+    }
+
+    #[test]
+    fn test_tensor1d_subtraction() {
+        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
+        let w = Tensor1D::raw([3.0, 4.0], [2]);
+
+        v.pairwise_subtraction(&w);
+        assert_eq!(v.data, [-2.0, -2.0]);
+    }
+
+    #[test]
+    fn test_tensor1d_multiplication() {
+        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
+        let w = Tensor1D::raw([3.0, 4.0], [2]);
+
+        v.pairwise_multiplication(&w);
+        assert_eq!(v.data, [3.0, 8.0]);
+    }
+
+    #[test]
+    fn test_tensor1d_division() {
+        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
+        let w = Tensor1D::raw([3.0, 4.0], [2]);
+
+        v.pairwise_division(&w);
+        assert_eq!(v.data, [1.0 / 3.0, 0.5]);
     }
 
     #[test]
@@ -238,8 +292,8 @@ mod tests {
     #[test]
     fn test_tensor2d_dot() {
         let a = Tensor2D::raw([1.0, 2.0], [2, 1]);
-        let b = Tensor2D::raw([3.0, 4.0], [2, 1])
-            .transpose();
+        let b = Tensor2D::raw([3.0, 4.0], [2, 1]).transpose();
         let c = a.dot(&b);
+        assert_eq!(c.data, [3.0, 4.0, 6.0, 8.0]);
     }
 }
