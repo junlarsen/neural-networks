@@ -45,7 +45,7 @@ impl Neuron {
 
     /// Make a forward pass through the neuron.
     pub fn forward(&mut self, input: &Tensor1D) -> f32 {
-        let linear = input.inner_product(&self.weights);
+        let linear = input.inner_product(&self.weights) + self.bias;
         self.output = self.activation.call(linear);
         self.output
     }
