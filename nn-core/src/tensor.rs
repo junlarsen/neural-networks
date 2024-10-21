@@ -39,7 +39,7 @@ impl<const N: usize> Tensor<N> {
     }
 
     /// Create a new tensor from a raw buffer and a shape
-    pub fn raw<T: Into<Vec<f32>>>(vec: T, dims: [usize; N]) -> Self {
+    pub fn from_raw<T: Into<Vec<f32>>>(vec: T, dims: [usize; N]) -> Self {
         Self {
             dims,
             data: vec.into(),
@@ -50,13 +50,26 @@ impl<const N: usize> Tensor<N> {
     pub fn rank(&self) -> usize {
         N
     }
+
+    /// Get a reference to the inner vector
+    pub fn inner(&self) -> &Vec<f32> {
+        &self.data
+    }
+
+    pub fn iter(&self) -> std::slice::Iter<f32> {
+        self.data.iter()
+    }
+
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<f32> {
+        self.data.iter_mut()
+    }
 }
 
 impl Tensor1D {
     pub fn from_vec<T: Into<Vec<f32>>>(vec: T) -> Self {
         let v = vec.into();
         let len = v.len();
-        Self::raw(v, [len])
+        Self::from_raw(v, [len])
     }
 
     /// Add another vector to the vector.
@@ -126,7 +139,7 @@ impl Tensor1D {
     /// Transpose the vector into a (1, n) 2-dimensional matrix.
     pub fn transpose(self) -> Tensor2D {
         let len = self.length();
-        Tensor2D::raw(self.data, [1, len])
+        Tensor2D::from_raw(self.data, [1, len])
     }
 
     /// Get the element count
@@ -231,8 +244,8 @@ mod tests {
 
     #[test]
     fn test_tensor1d_summation() {
-        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
-        let w = Tensor1D::raw([3.0, 4.0], [2]);
+        let mut v = Tensor1D::from_raw([1.0, 2.0], [2]);
+        let w = Tensor1D::from_raw([3.0, 4.0], [2]);
 
         v.pairwise_summation(&w);
         assert_eq!(v.data, [4.0, 6.0]);
@@ -240,8 +253,8 @@ mod tests {
 
     #[test]
     fn test_tensor1d_subtraction() {
-        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
-        let w = Tensor1D::raw([3.0, 4.0], [2]);
+        let mut v = Tensor1D::from_raw([1.0, 2.0], [2]);
+        let w = Tensor1D::from_raw([3.0, 4.0], [2]);
 
         v.pairwise_subtraction(&w);
         assert_eq!(v.data, [-2.0, -2.0]);
@@ -249,8 +262,8 @@ mod tests {
 
     #[test]
     fn test_tensor1d_multiplication() {
-        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
-        let w = Tensor1D::raw([3.0, 4.0], [2]);
+        let mut v = Tensor1D::from_raw([1.0, 2.0], [2]);
+        let w = Tensor1D::from_raw([3.0, 4.0], [2]);
 
         v.pairwise_multiplication(&w);
         assert_eq!(v.data, [3.0, 8.0]);
@@ -258,8 +271,8 @@ mod tests {
 
     #[test]
     fn test_tensor1d_division() {
-        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
-        let w = Tensor1D::raw([3.0, 4.0], [2]);
+        let mut v = Tensor1D::from_raw([1.0, 2.0], [2]);
+        let w = Tensor1D::from_raw([3.0, 4.0], [2]);
 
         v.pairwise_division(&w);
         assert_eq!(v.data, [1.0 / 3.0, 0.5]);
@@ -267,7 +280,7 @@ mod tests {
 
     #[test]
     fn test_tensor1d_scale() {
-        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
+        let mut v = Tensor1D::from_raw([1.0, 2.0], [2]);
 
         v.scale(2.0);
         assert_eq!(v.data, [2.0, 4.0]);
@@ -275,13 +288,13 @@ mod tests {
 
     #[test]
     fn test_tensor1d_length() {
-        let v = Tensor1D::raw([1.0, 2.0], [2]);
+        let v = Tensor1D::from_raw([1.0, 2.0], [2]);
         assert_eq!(v.length(), 2);
     }
 
     #[test]
     fn test_tensor1d_transpose() {
-        let v = Tensor1D::raw([1.0, 2.0], [2]);
+        let v = Tensor1D::from_raw([1.0, 2.0], [2]);
         let t = v.transpose();
         assert_eq!(t.data, [1.0, 2.0]);
         assert_eq!(t[(0, 0)], 1.0);
@@ -291,8 +304,8 @@ mod tests {
 
     #[test]
     fn test_tensor2d_dot() {
-        let a = Tensor2D::raw([1.0, 2.0], [2, 1]);
-        let b = Tensor2D::raw([3.0, 4.0], [2, 1]).transpose();
+        let a = Tensor2D::from_raw([1.0, 2.0], [2, 1]);
+        let b = Tensor2D::from_raw([3.0, 4.0], [2, 1]).transpose();
         let c = a.dot(&b);
         assert_eq!(c.data, [3.0, 4.0, 6.0, 8.0]);
     }

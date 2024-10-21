@@ -16,13 +16,13 @@ use crate::tensor::{Tensor, Tensor1D};
 #[derive(Debug)]
 pub struct Neuron {
     /// 1-dimensional tensor of input values
-    pub input: Tensor1D,
+    input: Tensor1D,
     /// 1-dimensional tensor of neuron weights, one for each input edge
-    pub weights: Tensor1D,
-    pub bias: f32,
-    pub activation: &'static dyn ActivationFunction,
-    pub output: f32,
-    pub delta: f32,
+    weights: Tensor1D,
+    bias: f32,
+    activation: &'static dyn ActivationFunction,
+    output: f32,
+    delta: f32,
 }
 
 impl Neuron {
@@ -57,13 +57,8 @@ impl Neuron {
         self.bias *= learning_rate * self.delta;
     }
 
-    /// Manually update the bias value of the neuron.
-    pub fn set_bias(&mut self, bias: f32) {
-        self.bias = bias;
-    }
-
-    /// Manually update the weights of the neuron.
-    pub fn set_weights(&mut self, weights: Tensor1D) {
-        self.weights = weights;
+    /// Get the weights of the neuron
+    pub fn weights(&self) -> &Tensor1D {
+        &self.weights
     }
 }
