@@ -1,4 +1,5 @@
 use crate::layer::Layer;
+use crate::tensor::Tensor;
 
 #[derive(Debug)]
 pub struct NeuralNetwork {

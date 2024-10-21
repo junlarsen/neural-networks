@@ -7,7 +7,7 @@
 //! and a method to update the weights based on the delta value.
 
 use crate::activation::ActivationFunction;
-use crate::tensor::{vector, Tensor};
+use crate::tensor::{Tensor, Tensor1D};
 
 /// A single neuron in a neural network.
 ///
@@ -16,9 +16,9 @@ use crate::tensor::{vector, Tensor};
 #[derive(Debug)]
 pub struct Neuron {
     /// 1-dimensional tensor of input values
-    pub input: Tensor,
+    pub input: Tensor1D,
     /// 1-dimensional tensor of neuron weights, one for each input edge
-    pub weights: Tensor,
+    pub weights: Tensor1D,
     pub bias: f32,
     pub activation: &'static dyn ActivationFunction,
     pub output: f32,
@@ -34,8 +34,8 @@ impl Neuron {
     /// These standard options can be changed by calling the `set_bias`, `set_weights` methods.
     pub fn new(input_size: usize, activation: &'static impl ActivationFunction) -> Self {
         Self {
-            input: Tensor::zeros(input_size),
-            weights: Tensor::uniform(input_size, -0.5, 0.5),
+            input: Tensor::zeros([input_size]),
+            weights: Tensor::uniform([input_size], -0.5, 0.5),
             bias: rand::random::<f32>() % 1.0,
             output: 0.0,
             delta: 0.0,
@@ -44,16 +44,16 @@ impl Neuron {
     }
 
     /// Make a forward pass through the neuron.
-    pub fn forward(&mut self, input: &Tensor) -> f32 {
-        let linear = vector::inner(input, &self.weights);
+    pub fn forward(&mut self, input: &Tensor1D) -> f32 {
+        let linear = input.inner_product(&self.weights);
         self.output = self.activation.call(linear);
         self.output
     }
 
     /// Update the weights and bias of the neuron according to the given learning rate.
     pub fn update_weights(&mut self, learning_rate: f32) {
-        vector::multiply(&mut self.weights, learning_rate);
-        vector::multiply(&mut self.weights, self.delta);
+        self.weights.scale(learning_rate);
+        self.weights.scale(self.delta);
         self.bias *= learning_rate * self.delta;
     }
 
@@ -63,7 +63,7 @@ impl Neuron {
     }
 
     /// Manually update the weights of the neuron.
-    pub fn set_weights(&mut self, weights: Tensor) {
+    pub fn set_weights(&mut self, weights: Tensor1D) {
         self.weights = weights;
     }
 }

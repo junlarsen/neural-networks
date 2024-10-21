@@ -1,148 +1,72 @@
-//! Linear algebra operations and data types.
-//!
-//! This module provides the tensor data type, which is a multi-dimensional array of f32 elements,
-//! as well as standard linear algebra operations such as matrix multiplication and vector
+//! Tensor data type and linear algebra operations.
 
 use rand::distributions::{Distribution, Uniform};
-use thiserror::Error;
+use std::ops::{Index, IndexMut};
 
-#[derive(Debug, Error)]
-pub enum TensorError {
-    #[error("tensor shape mismatch")]
-    ShapeMismatch,
-    #[error("tensor shape is not valid, only 1-d and 2-d tensors are supported")]
-    InvalidShape,
-}
+/// A rank-1 tensor, effectively a vector.
+pub type Tensor1D = Tensor<1>;
 
-/// The shape of a tensor, represented by a vector of dimensions.
+/// A rank-2 tensor, effectively a matrix.
+pub type Tensor2D = Tensor<2>;
+
+/// A multidimensional array of f32 elements.
 ///
-/// The tensor implementation is currently limited to 2-dimensional tensors.
-///
-/// A tensor shape of [2, 3] represents a 2-d matrix with 2 rows and 3 columns.
+/// The `N` argument specifies the rank (number of dimensions) of the tensor.
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct TensorShape {
-    dims: Vec<usize>,
+pub struct Tensor<const N: usize> {
+    dims: [usize; N],
+    data: Vec<f32>,
 }
 
-impl TensorShape {
-    /// Create a new tensor shape from a vector of dimensions
-    pub fn new<T: Into<Vec<usize>>>(dims: T) -> Result<Self, TensorError> {
-        let dims = dims.into();
-        if dims.len() > 2 {
-            return Err(TensorError::InvalidShape);
-        }
-        Ok(Self { dims })
-    }
-
-    /// Shorthand for creating a 1-dimensional vector
-    pub fn vector(len: usize) -> Self {
-        TensorShape { dims: [len].into() }
-    }
-
-    /// Shorthand for creating a 2-dimensional matrix
-    pub fn matrix(rows: usize, cols: usize) -> Self {
-        TensorShape {
-            dims: [rows, cols].into(),
-        }
-    }
-
-    /// Get the number of dimensions in the tensor shape
-    pub fn dims(&self) -> usize {
-        self.dims.len()
-    }
-
-    /// Get the size of the tensor
-    pub fn size(&self) -> usize {
-        self.dims.iter().product()
-    }
-}
-
-/// A tensor of f32 elements.
-///
-/// A tensor is a multidimensional array of f32 elements. We use it to represent vectors and
-/// matrices in neural networks.
-///
-/// At the moment, we only support 1-tensors and 2-tensors.
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Tensor {
-    inner: Vec<f32>,
-    shape: TensorShape,
-}
-
-impl Tensor {
+impl<const N: usize> Tensor<N> {
     /// Create a new tensor of the given shape, with all elements set to zero.
-    pub fn zeros(size: usize) -> Tensor {
-        let shape = TensorShape::vector(size);
-        Tensor {
-            inner: vec![0.0; size],
-            shape,
-        }
+    pub fn zeros(dims: [usize; N]) -> Self {
+        let size = dims.iter().product();
+        let data = vec![0.0; size];
+        Self { dims, data }
     }
 
     /// Create a tensor of the given shape, with all elements being uniformly distributed across
     /// the given range.
-    pub fn uniform(size: usize, min: f32, max: f32) -> Tensor {
-        let shape = TensorShape::vector(size);
+    pub fn uniform(dims: [usize; N], min: f32, max: f32) -> Self {
         let sampler = Uniform::new(min, max);
         let mut rng = rand::thread_rng();
-        let mut data = vec![0.0; shape.size()];
+        let mut data = vec![0.0; dims.iter().product()];
         for elem in data.iter_mut() {
             *elem = sampler.sample(&mut rng);
         }
-        Tensor { inner: data, shape }
+        Self { dims, data }
     }
 
     /// Create a new tensor from a raw buffer and a shape
-    pub fn new(data: Vec<f32>, shape: TensorShape) -> Result<Self, TensorError> {
-        if data.len() != shape.size() {
-            return Err(TensorError::ShapeMismatch);
+    pub fn raw<T: Into<Vec<f32>>>(vec: T, dims: [usize; N]) -> Self {
+        Self {
+            dims,
+            data: vec.into(),
         }
-        Ok(Self { inner: data, shape })
     }
 
-    /// Create a new tensor from a vector, inheriting the dimensions from the vector
-    pub fn vector(data: Vec<f32>) -> Self {
-        let shape = TensorShape::vector(data.len());
-        Self { inner: data, shape }
-    }
-
-    /// Get the value at the given index in the buffer
-    pub fn get(&self, index: usize) -> f32 {
-        self.inner[index]
-    }
-
-    /// Set the value at the given index in the buffer
-    pub fn set(&mut self, index: usize, value: f32) {
-        self.inner[index] = value;
-    }
-
-    /// Get the size of the tensor
-    pub fn size(&self) -> usize {
-        self.shape.size()
-    }
-
-    /// Get the shape of the tensor
-    pub fn shape(&self) -> &TensorShape {
-        &self.shape
+    /// Get the rank of the tensor
+    pub fn rank(&self) -> usize {
+        N
     }
 }
 
-/// Vector-like operations on Tensor values
-///
-/// The purpose of this module is to provide operations for Tensors, as if they were
-/// single-dimensional vectors.
-pub mod vector {
-    use crate::tensor::{Tensor, TensorShape};
-    use std::cmp::max;
+impl Tensor1D {
+    pub fn from_vec<T: Into<Vec<f32>>>(vec: T) -> Self {
+        let v = vec.into();
+        let len = v.len();
+        Self::raw(v, [len])
+    }
 
-    /// Add another vector to the current vector.
+    /// Add another vector to the vector.
     ///
     /// This operation updates each element in the current vector by adding the corresponding
     /// element in the other vector.
-    pub fn add(lhs: &mut Tensor, rhs: &Tensor) {
-        lhs.inner
+    pub fn add(&mut self, rhs: &Self) {
+        self.data
             .iter_mut()
-            .zip(rhs.inner.iter())
+            .zip(rhs.data.iter())
             .for_each(|(lhs, rhs)| {
                 *lhs += rhs;
             });
@@ -151,44 +75,64 @@ pub mod vector {
     /// Get the inner product value of the vector.
     ///
     /// This value is the sum of the products of each element pair in the two vectors.
-    pub fn inner(lhs: &Tensor, rhs: &Tensor) -> f32 {
-        lhs.inner
+    pub fn inner_product(&self, rhs: &Self) -> f32 {
+        self.data
             .iter()
-            .zip(rhs.inner.iter())
+            .zip(rhs.data.iter())
             .map(|(a, b)| a * b)
             .sum()
     }
 
-    /// Multiply the current tensor by a scalar value.
+    /// Scale the tensor by a scalar value.
     ///
     /// This operation updates each of the elements in the tensor by multiplying them by the
     /// given scalar value.
-    ///
-    /// This operation is also often called scaling a vector.
-    pub fn multiply(lhs: &mut Tensor, scalar: f32) {
-        lhs.inner.iter_mut().for_each(|elem| *elem *= scalar);
+    pub fn scale(&mut self, scalar: f32) {
+        self.data.iter_mut().for_each(|elem| *elem *= scalar);
+    }
+
+    /// Get the length of the vector
+    pub fn length(&self) -> usize {
+        self.dims[0]
     }
 
     /// Transpose the vector into a (1, n) 2-dimensional matrix.
-    ///
-    /// This operation essentially flips the "columns" in the vector to become rows in a matrix.
-    /// The resulting tensor is no longer single-dimensional.
-    pub fn transpose(lhs: &mut Tensor) {
-        lhs.shape = TensorShape::matrix(1, lhs.size());
+    pub fn transpose(self) -> Tensor2D {
+        let len = self.length();
+        Tensor2D::raw(self.data, [1, len])
     }
 
-    /// Get the buffer index value for a given index into the vector.
-    pub fn index(shape: &TensorShape, index: usize) -> usize {
-        max(index, shape.size())
+    /// Get the element count
+    pub fn size(&self) -> usize {
+        self.length()
     }
 }
 
-/// Matrix-like operations on Tensor values
-///
-/// The purpose of this module is to provide operations for Tensors, as if they were
-/// two-dimensional matrices.
-pub mod matrix {
-    use crate::tensor::{Tensor, TensorShape};
+impl Index<usize> for Tensor1D {
+    type Output = f32;
+    fn index(&self, index: usize) -> &Self::Output {
+        assert!(index < self.length(), "index out of bounds");
+        self.data.index(index)
+    }
+}
+
+impl IndexMut<usize> for Tensor1D {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        assert!(index < self.length(), "index out of bounds");
+        self.data.index_mut(index)
+    }
+}
+
+impl Tensor2D {
+    /// Get the number of rows in the matrix
+    pub fn rows(&self) -> usize {
+        self.dims[0]
+    }
+
+    /// Get the number of columns in the matrix
+    pub fn cols(&self) -> usize {
+        self.dims[1]
+    }
 
     /// Perform the dot product (matrix multiplication) of two tensors.
     ///
@@ -196,115 +140,106 @@ pub mod matrix {
     /// the corresponding elements in the two input tensors.
     ///
     /// This implementation only supports two-dimensional matrices.
-    pub fn dot(lhs: &Tensor, rhs: &Tensor) -> Tensor {
+    pub fn dot(&self, tensor: &Tensor2D) -> Tensor2D {
         assert_eq!(
-            rows(lhs.shape()),
-            cols(rhs.shape()),
+            self.rows(),
+            tensor.cols(),
             "cannot perform dot product on tensors with different dimensions"
         );
-        let output_size = rows(lhs.shape()) * cols(rhs.shape());
-        let output_shape = TensorShape::matrix(rows(lhs.shape()), cols(rhs.shape()));
-        let mut buffer = vec![0.0; output_size];
-        for row in 0..rows(lhs.shape()) {
-            for col in 0..cols(rhs.shape()) {
+        let mut output = Tensor2D::zeros([self.rows(), tensor.cols()]);
+        for row in 0..self.rows() {
+            for col in 0..tensor.cols() {
                 let mut sum = 0.0;
-                for i in 0..cols(lhs.shape()) {
-                    sum +=
-                        lhs.get(index(lhs.shape(), row, i)) * rhs.get(index(rhs.shape(), i, col));
+                for i in 0..self.cols() {
+                    sum += self.index((row, i)) * tensor.index((i, col));
                 }
-                buffer[index(&output_shape, row, col)] = sum;
+                *output.index_mut((row, col)) = sum;
             }
         }
-        Tensor::new(buffer, output_shape).expect("failed to create dot product")
+        output
     }
 
     /// Transpose the matrix, flipping rows and columns.
     ///
     /// This operation also re-positions the tensor elements. It implies a new allocation of the
     /// same size as the original tensor.
-    pub fn transpose(tensor: &Tensor) -> Tensor {
-        let mut buffer = vec![0.0; tensor.size()];
-        let output_shape = TensorShape::matrix(cols(tensor.shape()), rows(tensor.shape()));
-        for row in 0..rows(tensor.shape()) {
-            for col in 0..cols(tensor.shape()) {
-                buffer[index(&output_shape, col, row)] =
-                    tensor.get(index(tensor.shape(), row, col));
+    pub fn transpose(&self) -> Tensor2D {
+        let mut output = Tensor2D::zeros([self.cols(), self.rows()]);
+        for row in 0..self.rows() {
+            for col in 0..self.cols() {
+                *output.index_mut((col, row)) = *self.index((row, col));
             }
         }
-        Tensor::new(buffer, output_shape).expect("failed to create transpose")
+        output
     }
 
-    /// Get the buffer index value for a given row and column in the matrix.
-    pub fn index(shape: &TensorShape, row: usize, col: usize) -> usize {
-        assert!(row < shape.dims[0], "row index out of bounds");
-        assert!(col < shape.dims[1], "column index out of bounds");
-
-        row * shape.dims[1] + col
+    /// Get the element count
+    pub fn size(&self) -> usize {
+        self.dims[0] * self.dims[1]
     }
+}
 
-    /// Get the row count of the matrix
-    pub fn rows(shape: &TensorShape) -> usize {
-        shape.dims[0]
+impl Index<(usize, usize)> for Tensor2D {
+    type Output = f32;
+    fn index(&self, (row, col): (usize, usize)) -> &Self::Output {
+        assert!(row < self.rows(), "row index out of bounds");
+        assert!(col < self.cols(), "column index out of bounds");
+        let idx = row * self.cols() + col;
+        self.data.index(idx)
     }
+}
 
-    /// Get the column count of the matrix
-    pub fn cols(shape: &TensorShape) -> usize {
-        shape.dims[1]
+impl IndexMut<(usize, usize)> for Tensor2D {
+    fn index_mut(&mut self, (row, col): (usize, usize)) -> &mut Self::Output {
+        assert!(row < self.rows(), "row index out of bounds");
+        assert!(col < self.cols(), "column index out of bounds");
+        let idx = row * self.cols() + col;
+        self.data.index_mut(idx)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::tensor::{matrix, vector, Tensor, TensorError, TensorShape};
+    use crate::tensor::{Tensor1D, Tensor2D};
 
     #[test]
-    fn test_vector_addition() {
-        let mut v = Tensor::vector(vec![1.0, 2.0]);
-        let w = Tensor::vector(vec![3.0, 4.0]);
+    fn test_tensor1d_addition() {
+        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
+        let w = Tensor1D::raw([3.0, 4.0], [2]);
 
-        vector::add(&mut v, &w);
-        assert_eq!(v.inner, [4.0, 6.0]);
+        v.add(&w);
+        assert_eq!(v.data, [4.0, 6.0]);
     }
 
     #[test]
-    fn test_vector_scalar_multiplication() {
-        let mut v = Tensor::vector(vec![1.0, 2.0]);
+    fn test_tensor1d_scale() {
+        let mut v = Tensor1D::raw([1.0, 2.0], [2]);
 
-        vector::multiply(&mut v, 2.0);
-        assert_eq!(v.inner, [2.0, 4.0]);
+        v.scale(2.0);
+        assert_eq!(v.data, [2.0, 4.0]);
     }
 
     #[test]
-    fn test_vector_size() {
-        let v = Tensor::vector(vec![1.0, 2.0]);
-        assert_eq!(v.size(), 2);
+    fn test_tensor1d_length() {
+        let v = Tensor1D::raw([1.0, 2.0], [2]);
+        assert_eq!(v.length(), 2);
     }
 
     #[test]
-    fn test_matrix_transpose() -> Result<(), TensorError> {
-        let shape = TensorShape::matrix(1, 2);
-        let m = Tensor::new(vec![1.0, 2.0], shape)?;
-        let t = matrix::transpose(&m);
-        assert_eq!(t.get(matrix::index(t.shape(), 0, 0)), 1.0);
-        assert_eq!(t.get(matrix::index(t.shape(), 1, 0)), 2.0);
-        Ok(())
+    fn test_tensor1d_transpose() {
+        let v = Tensor1D::raw([1.0, 2.0], [2]);
+        let t = v.transpose();
+        assert_eq!(t.data, [1.0, 2.0]);
+        assert_eq!(t[(0, 0)], 1.0);
+        assert_eq!(t[(0, 1)], 2.0);
+        assert_eq!(t.dims, [1, 2]);
     }
 
     #[test]
-    fn test_matrix_multiply() -> Result<(), TensorError> {
-        let shape = TensorShape::matrix(2, 1);
-        let a = Tensor::new(vec![1.0, 2.0], shape.clone())?;
-        let b = Tensor::new(vec![3.0, 4.0], shape)?;
-        // Transpose the second matrix to align its rows as columns for the dot product
-        let b = matrix::transpose(&b);
-        let c = matrix::dot(&a, &b);
-
-        println!("{:?}", c);
-
-        assert_eq!(c.get(matrix::index(c.shape(), 0, 0)), 3.0);
-        assert_eq!(c.get(matrix::index(c.shape(), 0, 1)), 4.0);
-        assert_eq!(c.get(matrix::index(c.shape(), 1, 0)), 6.0);
-        assert_eq!(c.get(matrix::index(c.shape(), 1, 1)), 8.0);
-        Ok(())
+    fn test_tensor2d_dot() {
+        let a = Tensor2D::raw([1.0, 2.0], [2, 1]);
+        let b = Tensor2D::raw([3.0, 4.0], [2, 1])
+            .transpose();
+        let c = a.dot(&b);
     }
 }
